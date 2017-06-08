@@ -1,16 +1,18 @@
 'use strict';
 
+const fs = require('fs');
 const express = require('express');
 const app = express();
-const fs = require('fs');
 const path = require('path');
-const petsPath = path.join(__dirname, 'pets.JSON');
-// const app = express.Router();
-
-const bodyParser = require('body-parser');
-// const pets = require('restfulExpressServer');
-const morgan = require('morgan');
+const petsPath = path.join(__dirname, 'pets.json');
 const port = process.env.PORT || 8000;
+
+
+const morgan = require('morgan');
+const bodyParser = require('body-parser');
+app.use(morgan('short'));
+app.use(bodyParser.json());
+
 
 app.get('/pets', (req, res) => {
   fs.readFile(petsPath, 'utf8', (err, petsData) => {
@@ -18,10 +20,8 @@ app.get('/pets', (req, res) => {
       console.error(err.stack);
       return res.sendStatus(500);
     }
-    const pets = JSON.parse(petsData);
-
-
-    res.send(pets);
+    let petsJSON = JSON.parse(petsData);
+    res.send(petsJSON);
   });
 });
 
@@ -29,16 +29,17 @@ app.get('/pets/:id', (req, res) => {
   fs.readFile(petsPath, 'utf8', (err, petsData) => {
     if (err) {
       console.error(err.stack);
-      return res.sendStatus(err);
+      return res.sendStatus(500);
     }
-    const id = parseInt(req.params.id);
-    const pets = JSON.parse(petsData);
+    let petsJSON = JSON.parse(petsData);
+    let id = parseInt(req.params.id);
 
-    if (id >= 0 && id <= pets.length && !isNaN(id)) {
-      res.send(pets[id]);
-    } else {
-      return res.sendStatus(404);
+    if (id < 0 || id >= petsJSON.length || Number.isNaN(id)) {
+        return res.sendStatus(404);
     }
+
+    res.send(petsJSON[id]);
+
 
   });
 });
@@ -49,94 +50,98 @@ app.post('/pets', (req, res) => {
       console.error(err.stack);
       return res.sendStatus(500);
     }
-    let pets = JSON.parse(petsData);
+    let petsJSON = JSON.parse(petsData);
 
     let name = req.body.name;
     let age = parseInt(req.body.age);
     let kind = req.body.kind;
 
     if (!name || isNaN(age) || !kind) {
-      return res.sendStatus(404);
+      return res.sendStatus(400);
     }
     if (age && name && kind) {
-      let petArray = {
+      let newArray = {
         age,
         name,
         kind
       }
-      pets.push(petArray);
-    }
-
-    let newpetJSON = JSON.stringify(pets);
+      petsJSON.push(newArray);
+    let newpetJSON = JSON.stringify(petsJSON);
     fs.writeFile(petsPath, newpetJSON, (err) => {
       if (err) {
         console.error(err.stack);
         return res.sendStatus(500);
       }
     });
-    res.send(pet);
+    res.send(newArray);
+  }
+
   });
 });
 
 app.patch('/pets/:id', (req, res) => {
   fs.readFile(petsPath, 'utf8', (err, petsData) => {
     if (err) {
-      console.log(err.stack);
+      console.error(err.stack);
       return res.sendStatus(500);
     }
-    let pets = JSON.parse(petsData);
+    let petsJSON = JSON.parse(petsData);
     let id = parseInt(req.params.id);
+
     if (id < 0 || id > petsData.length || isNaN(id)) {
-      res.send(404);
+      return res.send(404);
     }
     let name = req.body.name;
     let kind = req.body.kind;
     let age = parseInt(req.body.age);
 
-    if (age === true) {
-      pets[id].age = age;
+    if (age) {
+      petsJSON[id].age = age;
     }
-    if (kind === true) {
-      pets[id].kind = kind;
+    if (kind) {
+      petsJSON[id].kind = kind;
     }
-    if (name === true) {
-      pets[id].name = name;
+    if (name) {
+      petsJSON[id].name = name;
     }
 
-    let newpetJSON = JSON.stringify(pets);
+    let newpetJSON = JSON.stringify(petsJSON);
     fs.writeFile(petsPath, newpetJSON, (err) => {
       if (err) {
         return res.sendStatus(500);
       }
-    })
-    res.send(pets[id]);
+      res.send(petsJSON[id]);
+    });
   });
 });
 
 app.delete('/pets/:id', (req, res) => {
   fs.readFile(petsPath, 'utf8', (err, petsData) => {
     if (err) {
-      console.error(err);
+      console.error(err.stack);
+      return res.sendStatus(500);
+    }
+
+    let id = parseInt(req.params.id);
+    let petsJSON = JSON.parse(petsData);
+
+    if (id < 0 || id >= petsJSON.length || isNaN(id)) {
       return res.sendStatus(404);
     }
-    let pets = JSON.parse(petsData);
 
+    let petsDelete = petsJSON.splice(id, 1)[0];
+    let newpets = JSON.stringify(petsJSON);
 
-    if (id < 0 || id > pets.length || isNaN(pets)) {
-      res.sendStatus(404);
-    }
-    let petsDelete = pets.slice(id, 1);
-    let newpetsJSON = JSON.stringify(pets);
-
-    fs.writeFile(petsData, newpetsJSON, (err) => {
+    fs.writeFile(petsPath, newpets, (err) => {
       if (err) {
+        console.error(err.stack);
         return res.sendStatus(500);
       }
       res.send(petsDelete);
-    })
+    });
 
-  })
-})
+  });
+});
 app.listen(port, () => {
   console.log('Listening on port', port);
 })
