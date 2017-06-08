@@ -15,7 +15,7 @@ const port = process.env.PORT || 8000;
 app.get('/pets', (req, res) => {
   fs.readFile(petsPath, 'utf8', (err, petsData) => {
     if (err) {
-      console.log(err.stack);
+      console.error(err.stack);
       return res.sendStatus(500);
     }
     const pets = JSON.parse(petsData);
@@ -28,7 +28,7 @@ app.get('/pets', (req, res) => {
 app.get('/pets/:id', (req, res) => {
   fs.readFile(petsPath, 'utf8', (err, petsData) => {
     if (err) {
-      console.log(err.stack);
+      console.error(err.stack);
       return res.sendStatus(err);
     }
     const id = parseInt(req.params.id);
@@ -46,7 +46,7 @@ app.get('/pets/:id', (req, res) => {
 app.post('/pets', (req, res) => {
   fs.readFile(petsPath, 'utf8', (err, petsData) => {
     if (err) {
-      console.log(err.stack);
+      console.error(err.stack);
       return res.sendStatus(500);
     }
     let pets = JSON.parse(petsData);
@@ -116,7 +116,7 @@ app.patch('/pets/:id', (req, res) => {
 app.delete('/pets/:id', (req, res) => {
   fs.readFile(petsPath, 'utf8', (err, petsData) => {
     if (err) {
-      console.log(err);
+      console.error(err);
       return res.sendStatus(404);
     }
     let pets = JSON.parse(petsData);
@@ -140,4 +140,4 @@ app.delete('/pets/:id', (req, res) => {
 app.listen(port, () => {
   console.log('Listening on port', port);
 })
-module.export = app;
+module.exports = app;
